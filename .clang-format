@@ -1,0 +1,12 @@
+---
+Language:        Cpp
+BasedOnStyle:  LLVM  # You can adapt this
+IndentWidth:     4
+TabWidth:        4
+UseTab:          Never  # You can adjust this
+BreakBeforeBraces: false 
+AllowShortIfStatementsOnASingleLine: false
+IndentCaseLabels: false
+ColumnLimit:     0
+...
+
