@@ -1,4 +1,5 @@
 #include "main.h"
+
 #include "okapi/api/chassis/model/threeEncoderXDriveModel.hpp"
 #include "okapi/impl/device/rotarysensor/IMU.hpp"
 #include <memory>
@@ -77,7 +78,7 @@ void autonomous() {}
  * task, not resume it from where it left off.
  */
 void opcontrol() {
-  Controller main_controller(ControllerId::master);
+    pros::Controller main_controller(pros::E_CONTROLLER_MASTER);
   Controller secondary_controller(ControllerId::partner);
   std::shared_ptr<Motor> back_right_mtr(new Motor(-16));
   std::shared_ptr<Motor> back_left_mtr(new Motor(4));
@@ -90,6 +91,9 @@ void opcontrol() {
   std::shared_ptr<MotorGroup> intake(
       new MotorGroup({right_intake, left_intake}));
 
+  std::shared_ptr<Motor> catapult(new Motor(13));
+  catapult->setGearing(AbstractMotor::gearset::red);
+
   std::shared_ptr<RotationSensor> left_rot(new RotationSensor(19));
   std::shared_ptr<RotationSensor> right_rot(new RotationSensor(2));
   std::shared_ptr<RotationSensor> back_rot(new RotationSensor(18));
@@ -99,19 +103,44 @@ void opcontrol() {
                                  right_rot, back_rot, 150.0, 12000);
   pros::IMU imu(6);
 
+  double degrees = catapult->getPosition();
+  bool cataMotorEngaged = false;
+
+  bool catapultOn = true;
+  
+  int spins = 0;
+
   while (true) {
     chasis.fieldOrientedXArcade(
-        main_controller.getAnalog(ControllerAnalog::leftY),
-        main_controller.getAnalog(ControllerAnalog::leftX),
-        main_controller.getAnalog(ControllerAnalog::rightX),
+        main_controller.get_analog(pros::E_CONTROLLER_ANALOG_LEFT_Y),
+        main_controller.get_analog(pros::E_CONTROLLER_ANALOG_LEFT_X),
+        main_controller.get_analog(pros::E_CONTROLLER_ANALOG_RIGHT_X),
         imu.get_heading() * 1_deg);
     // Intake
-    if (main_controller.getDigital(ControllerDigital::R1) == 1) {
+    if (main_controller.get_digital(pros::E_CONTROLLER_DIGITAL_R1) == 1) {
       intake->moveVoltage(12000);
     } else {
       intake->moveVoltage(0);
     }
 
+    // Catapult
+    if (main_controller.get_digital_new_press(pros::E_CONTROLLER_DIGITAL_R2) == 1) {
+        catapultOn = !catapultOn;
+    } 
+
+    if (catapultOn) {
+        int rotations = (int) catapult->getPosition() / 360;
+        catapult->moveAbsolute(rotations*-1800, -12000);
+    } else {
+        while (catapult->getPosition() > -100.0) { 
+            catapult->moveVoltage(-12000);
+        }
+        if (catapult->getPosition() < -100 * spins) {
+            catapult->moveVoltage(0);
+        }
+    }
+
+  pros::lcd::set_text(1, std::to_string(catapult->getPosition()));
     pros::delay(10);
   }
 }
