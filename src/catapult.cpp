@@ -21,7 +21,8 @@ void catapultTask() {
 
   while (true) {
 
-    if (main_controller->get_digital(pros::E_CONTROLLER_DIGITAL_R2) == 1) {
+    if (main_controller->get_digital_new_press(pros::E_CONTROLLER_DIGITAL_R2) ==
+        1) {
       catapultEngaged = !catapultEngaged;
     }
     if (catapultEngaged) {
@@ -34,7 +35,7 @@ void catapultTask() {
         if (stuckCount > 200) {
           catapultState = IDLE;
           catapult->moveVoltage(0);
-          pros::delay(1000);
+          pros::delay(2500);
         }
         if ((int)catapult->getPosition() % 1800 != 0) {
           absoluteNextZero = (int)catapult->getPosition() +
@@ -45,19 +46,26 @@ void catapultTask() {
         pros::lcd::set_text(3, "WINDING");
         pros::lcd::set_text(4, "Next Zero (n): " +
                                    std::to_string(absoluteNextZero / 1800.0));
-        catapult->moveAbsolute(absoluteNextZero, 200);
-        if (catapult->getPosition() > absoluteNextZero - 5) {
+        catapult->moveAbsolute(absoluteNextZero - 5, 200);
+        if (catapult->getPosition() > absoluteNextZero - 15) {
           catapultState = LOCKED;
         }
       } else if (catapultState == LOCKED) {
         pros::lcd::set_text(3, "LOCKED");
+        stuckCount = 0;
         pros::delay(1000);
         catapultState = FIRING;
       } else if (catapultState == FIRING) {
+        stuckCount++;
         pros::lcd::set_text(3, "FIRING");
-        catapult->moveAbsolute(absoluteNextZero + 300, 200);
-        if (catapult->getPosition() > absoluteNextZero + 290) {
+        catapult->moveAbsolute(absoluteNextZero + 200, 200);
+        if (catapult->getPosition() > absoluteNextZero + 190) {
           catapultState = WINDING;
+        }
+        if (stuckCount >= 200) {
+          catapultState = IDLE;
+          catapult->moveVoltage(0);
+          pros::delay(2500);
         }
       }
     } else {
