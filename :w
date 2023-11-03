@@ -111,7 +111,7 @@ void opcontrol() {
   bool catapultOn = true;
   bool cataOnFR = false;
 
-  pros::Task cataTask(catapultTask, "catapultTask");
+  pros::Task cataTask(catapultTask, (void *), "catapultTask");
 
   while (true) {
     chasis.fieldOrientedXArcade(
@@ -127,12 +127,11 @@ void opcontrol() {
     }
 
     // Catapult
-    // if (main_controller->get_digital_new_press(pros::E_CONTROLLER_DIGITAL_R2)
-    // ==
-    //   1) {
-    // catapultOn = !catapultOn;
-    // cataOnFR = true;
-    //}
+    if (main_controller->get_digital_new_press(pros::E_CONTROLLER_DIGITAL_R2) ==
+        1) {
+      catapultOn = !catapultOn;
+      cataOnFR = true;
+    }
     if (cataOnFR) {
       if (catapultOn) {
         double rotationsD = (catapult->getPosition()) / 1800.0;
