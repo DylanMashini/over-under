@@ -79,87 +79,48 @@ void autonomous() {}
  * task, not resume it from where it left off.
  */
 void opcontrol() {
-  std::shared_ptr<pros::Controller> main_controller(
-      new pros::Controller(pros::E_CONTROLLER_MASTER));
-  Controller secondary_controller(ControllerId::partner);
-  std::shared_ptr<Motor> back_right_mtr(new Motor(-16));
-  std::shared_ptr<Motor> back_left_mtr(new Motor(4));
-  std::shared_ptr<Motor> front_right_mtr(new Motor(-20));
-  std::shared_ptr<Motor> front_left_mtr(new Motor(9));
+  pros::Controller main_controller(pros::E_CONTROLLER_MASTER);
+  std::shared_ptr<Motor> back_right_mtr(new Motor(-17));
+  std::shared_ptr<Motor> back_left_mtr(new Motor(16));
+  std::shared_ptr<Motor> front_right_mtr(new Motor(-15));
+  std::shared_ptr<Motor> front_left_mtr(new Motor(11));
 
-  std::shared_ptr<Motor> right_intake(new Motor(-7));
-  std::shared_ptr<Motor> left_intake(new Motor(8));
+  std::shared_ptr<Motor> right_intake(new Motor(-12));
+  std::shared_ptr<Motor> left_intake(new Motor(2));
 
   std::shared_ptr<MotorGroup> intake(
       new MotorGroup({right_intake, left_intake}));
 
-  std::shared_ptr<Motor> catapult(new Motor(13));
-  catapult->setGearing(AbstractMotor::gearset::red);
-
+  // UNUSED BUT BREAKS SHIT IF YOU REMOVE
   std::shared_ptr<RotationSensor> left_rot(new RotationSensor(19));
   std::shared_ptr<RotationSensor> right_rot(new RotationSensor(2));
   std::shared_ptr<RotationSensor> back_rot(new RotationSensor(18));
 
-  std::shared_ptr<Motor> left_lift(new Motor(1));
-  std::shared_ptr<Motor> right_lift(new Motor(18));
-
   ThreeEncoderXDriveModel chasis(front_left_mtr, front_right_mtr,
                                  back_right_mtr, back_left_mtr, left_rot,
                                  right_rot, back_rot, 150.0, 12000);
-  pros::IMU imu(6);
-
-  bool catapultOn = true;
-  bool cataOnFR = false;
+  pros::IMU imu(3);
 
   pros::Task cataTask(catapultTask, "catapultTask");
 
   while (true) {
+    pros::lcd::set_text(4, "Left: " + std::to_string(main_controller.get_analog(
+                                          pros::E_CONTROLLER_ANALOG_LEFT_Y)));
     chasis.fieldOrientedXArcade(
-        main_controller->get_analog(pros::E_CONTROLLER_ANALOG_LEFT_Y),
-        main_controller->get_analog(pros::E_CONTROLLER_ANALOG_LEFT_X),
-        main_controller->get_analog(pros::E_CONTROLLER_ANALOG_RIGHT_X),
+        main_controller.get_analog(pros::E_CONTROLLER_ANALOG_LEFT_Y),
+        main_controller.get_analog(pros::E_CONTROLLER_ANALOG_LEFT_X),
+        main_controller.get_analog(pros::E_CONTROLLER_ANALOG_RIGHT_X),
         imu.get_heading() * 1_deg);
     // Intake
-    if (main_controller->get_digital(pros::E_CONTROLLER_DIGITAL_R1) == 1) {
+    if (main_controller.get_digital(pros::E_CONTROLLER_DIGITAL_L2) == 1) {
       intake->moveVoltage(12000);
+    } else if (main_controller.get_digital(pros::E_CONTROLLER_DIGITAL_L1) ==
+               1) {
+      intake->moveVoltage(-12000);
     } else {
       intake->moveVoltage(0);
     }
 
-    // Catapult
-    // if (main_controller->get_digital_new_press(pros::E_CONTROLLER_DIGITAL_R2)
-    // ==
-    //   1) {
-    // catapultOn = !catapultOn;
-    // cataOnFR = true;
-    //}
-    if (cataOnFR) {
-      if (catapultOn) {
-        double rotationsD = (catapult->getPosition()) / 1800.0;
-        rotationsD = rotationsD - 0.15;
-        int rotations = round(rotationsD);
-        catapult->moveAbsolute(rotations * 1800, -12000);
-        if (catapult->getPosition() < (rotations * 1800) + 5) {
-          pros::delay(1000);
-          catapultOn = false;
-        }
-        pros::lcd::set_text(2, std::to_string(rotations * 1800));
-      } else {
-        double rotationsD = (catapult->getPosition()) / 1800.0;
-        int rotations = round(rotationsD);
-        while ((rotations * 1800.0) - 100.0 < catapult->getPosition()) {
-          catapult->moveVoltage(-12000);
-        }
-        catapult->moveVoltage(0);
-      }
-    }
-    if (main_controller->get_digital(pros::E_CONTROLLER_DIGITAL_DOWN) == 1) {
-      left_lift->moveVoltage(12000);
-      right_lift->moveVoltage(12000);
-    } else {
-      left_lift->moveVoltage(0);
-      right_lift->moveVoltage(0);
-    }
     pros::delay(10);
   }
 }

@@ -32,7 +32,7 @@ void catapultTask() {
         stuckCount = 0;
       } else if (catapultState == WINDING) {
         stuckCount++;
-        if (stuckCount > 200) {
+        if (stuckCount > 400) {
           catapultState = IDLE;
           catapult->moveVoltage(0);
           pros::delay(2500);
@@ -62,7 +62,7 @@ void catapultTask() {
         if (catapult->getPosition() > absoluteNextZero + 190) {
           catapultState = WINDING;
         }
-        if (stuckCount >= 200) {
+        if (stuckCount >= 400) {
           catapultState = IDLE;
           catapult->moveVoltage(0);
           pros::delay(2500);
@@ -73,6 +73,6 @@ void catapultTask() {
       catapult->moveVoltage(0);
     }
 
-    pros::delay(20);
+    pros::delay(10);
   }
 }
