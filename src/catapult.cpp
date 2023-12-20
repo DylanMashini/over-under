@@ -6,7 +6,9 @@ enum cataState { IDLE, WINDING, LOCKED, FIRING };
 void catapultTask() {
   std::shared_ptr<pros::Controller> main_controller(
       new pros::Controller(pros::E_CONTROLLER_MASTER));
-  std::shared_ptr<Motor> catapult(new Motor(-13));
+
+  std::shared_ptr<MotorGroup> catapult(new MotorGroup({1, -2}));
+
   catapult->setGearing(AbstractMotor::gearset::red);
   catapult->setBrakeMode(AbstractMotor::brakeMode::hold);
   catapult->moveAbsolute(0, 200);

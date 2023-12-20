@@ -88,6 +88,11 @@ void opcontrol() {
   std::shared_ptr<Motor> right_intake(new Motor(-12));
   std::shared_ptr<Motor> left_intake(new Motor(2));
 
+  std::shared_ptr<Motor> left_lift(new Motor(0));
+  std::shared_ptr<Motor> right_lift(new Motor(0));
+
+  std::shared_ptr<MotorGroup> lift_motors(new MotorGroup({left_lift, right_lift}));
+
   std::shared_ptr<MotorGroup> intake(
       new MotorGroup({right_intake, left_intake}));
 
@@ -120,6 +125,15 @@ void opcontrol() {
     } else {
       intake->moveVoltage(0);
     }
+
+  if (main_controller.get_digital(pros::E_CONTROLLER_DIGITAL_B) == 1) {
+    lift_motors->moveVoltage(12000);
+  } else if (main_controller.get_digital(pros::E_CONTROLLER_DIGITAL_A)) {
+    lift_motors->moveVoltage(-12000);
+  } else {
+    lift_motors->moveVoltage(0);
+  }
+
 
     pros::delay(10);
   }
